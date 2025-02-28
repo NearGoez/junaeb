@@ -1,59 +1,47 @@
-inoremap ( ()<Esc>i
-inoremap { {}<Esc>i
-inoremap [ []<Esc>i
-inoremap " ""<Esc>i
-inoremap ' ''<Esc>i
+import asyncio 
+import time
+import aiohttp
+from bs4 import BeautifulSoup as bs
 
-syntax on
-syntax enable
-set relativenumber
-set number
-set guifont=Source\ Code\ Pro\ Regular\ 11
-set tabstop=4
-set shiftwidth=4
-set expandtab
-set autoindent
-set smartindent
-set ruler
+def digito(rut):
+    value = 11 - sum([ int(a)*int(b) for a,b in zip(str(rut).zfill(8), '32765432')])%11
+    return {10: 'K', 11: '0'}.get(value, str(value))
 
-call plug#begin()
 
-Plug 'lervag/vimtex'
+rut_inicial = 14000000
 
-call plug#end()
+print(type(digito(rut_inicial)))
 
-let g:vimtex_view_method = 'zathura'
-let g:vimtex_view_automatic = 1
-let g:vimtex_compiler_method = 'latexmk'
-let g:vimtex_compiler_latexmk = {
-  \ 'build_dir' : '/home/denis/texbuild',
-  \ 'options' : [
-  \   '-synctex=1',
-  \   '-interaction=nonstopmode',
-  \   '-outdir=/home/denis/texbuild',
-  \ ],
-  \}
+async def fetch_rut(rut:int, session):
 
-autocmd FileType cpp set makeprg=g++\ %\ -o\ \%<.out
 
-function! CompileAndRun()
-	if &filetype == 'cpp'
-		exec "make"
-		if v:shell_error==0
-            exec "!xfce4-terminal --command 'bash -c \"./" . expand('%<') . ".out; exec bash\"' &"	
-        endif
+async def main(rut_inicial):
+    rut_actual = rut_inicial
+    while True:
+        async with aiohttp.ClientSession() as session:
+            for i in range(80000):
 
-	elseif &filetype == 'python'
-        exec "!xfce4-terminal --command 'bash -c \"python3 " . expand("%") . "; exec bash\"' &"
+                async with session.get('https://sinabweb.junaeb.cl/sinabweb/registro', ssl=False) as response:
+                    html = await response.text()
 
-    endif
-endfunction
-nnoremap <F5> :call CompileAndRun()<CR>
+                soup = bs(html, 'html.parser')
+                token = soup.find('input', {'name': '_csrf'})['value']
 
-set clipboard=unnamedplus
+                headers = {
+                'x-csrf-token': token,
+                }
 
-highlight Normal ctermbg=none ctermfg=none
+                url_personal_info = 'https://sinabweb.junaeb.cl/sinabweb/registro/getPersonaInfo' 
+                rut_str = f'{str(rut_actual)}-{digito(rut_actual)}'
+                payload = {
+                        'rut': '21885663-2',
+                        }
+                async with session.post(url_personal_info, data=payload, headers=headers, ssl=False) as response:
+                    personal_info_json = await response.text()
 
-            
+                print(personal_info_json)
+                rut_actual +=1
 
+
+#asyncio.run(main(rut_inicial))
 
