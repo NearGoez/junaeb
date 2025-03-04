@@ -12,7 +12,11 @@ rut_inicial = 14000000
 
 print(type(digito(rut_inicial)))
 
-async def fetch_rut(rut:int, session):
+async def fetch_rut(session, token, rut):
+    payload = {
+
+    }
+    async with session.post() as response:
 
 
 async def main(rut_inicial):
