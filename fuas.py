@@ -1,22 +1,74 @@
+import asyncio
+import aiohttp
+from bs4 import BeautifulSoup as bs
+import regex
+import json
+import time
+print('Cargando diccionario...')
+#from data import dicc as data#300 megas pesa solo el data.py
+print('Diccionario cargado')
+data = {}
+
+async def fetch_rut(session, rut):
+    rut = str(rut)
+    timeout = aiohttp.ClientTimeout(total=10)
+    try:
+        async with session.get(f'https://resultados.beneficiosestudiantiles.cl/api/veRecaptcha.php?rut={rut}&callback=ng_jsonp_callback_0') as response:
+            respuesta = await response.text()
+            return respuesta[26:len(respuesta) -1]
+    except:
+        return '{"status": 404}'
 
 
-from requests_html import HTMLSession
+async def main(rut_inicial, dicc):
+    async with aiohttp.ClientSession() as session:
+        rut = rut_inicial
 
-session = HTMLSession()
+        start = time.perf_counter()
+        while rut <= 22600000:
+            print(rut)
+            tasks = [fetch_rut(session, rut+i) for i in range(10000)]
+            resultados = await asyncio.gather(*tasks)
+            """
+            for i in range(len(resultados)):
+                dicc_respuesta = json.loads(resultados[i])
 
-try:
-    r = session.get('https://resultados.beneficiosestudiantiles.cl/login')
-    r.html.render(sleep=2)
+                if dicc_respuesta['status'] == 200:
+                        
+                    data = dicc_respuesta['resultado']['datosPostulante']
+                    datos = ", ".join([dato['valor'] for dato in data])
+                    print(rut, datos)
+                rut += 1
+            end = time.perf_counter()
+            print('Tiempo:', end-start)
+            """
+            with open("edu20.py", "rb") as f:
+                # Lee todas las líneas excepto la última
+                lines = f.readlines()
 
-    if r.html is None:
-        raise ValueError('El contenido es None')
+            with open("edu20.py", "wb") as f:
+                # Escribe todas las líneas, excepto la última
+                f.writelines(lines[:-1])
 
-    print(r.html.html)
+            with open('edu20.py', 'a') as f:
+                for i in range(len(resultados)):
+                    dicc_respuesta = json.loads(resultados[i])
 
-except Exception as e:
-    print('Se ha producido una excepcion', e)
+                    if dicc_respuesta['status'] == 200:
+                            
+                        data = dicc_respuesta['resultado']['datosPostulante']
+                        datos = ", ".join([dato['valor'] for dato in data])
+                        print(rut, datos)
 
-r = session.get('https://resultados.beneficiosestudiantiles.cl/resultados?rut=21967064&recaptcha=03AFcWeA4iSf-lnNbLDUaZktHVyJbJuXvKWA7ij9hm52PW8aDE_gT99FTSkpDI9ptbmddZjKpA9NbKkw1eNh4vHcBMYKr3XZxTH2HDpyPgvD3FjNMcpZcNe68nqa9hMeQzksqJzGXtCfatwGXT_20BZaFwq158pV5ABmb0OwnRlAAC2OnhIkm4rVlYsJPA7iwuLdlDYwzPCL6D54Y_7wfxIlsbwS8qaJReDM64lkHasG6zZSWRsuhi2g1ZZOP28iTUhXEKM48bghqNukUSnvdID5wkcPXbRfeKUDFs--peMPHV0SXtnOnpVd_xphJZXz3kMZ0wcdv7Wy3iPL12Szx5Z7w-O9UpkPlPB9wuunE0RxRUa7ExEZ6q_V_Z9JlzZAScvwFZuFs9DjCWqQlnV6NH9WoFrFhn8llgkYGtjJKXus4sCA%E2%80%A6M3K7ZQ7kmD-tu3H2YWYEv9fJMwPkn5YDxoDW3kGSHZ2vUrZlr1TRXorgg4RBF5RJ5Y0VvD9TF-Fk55p0g4W13oxhQRcIy6G7Ql2dLWxRJBHAdy67usoDWUO2gEHbB6huAfrCQY-X7ZQM3lP4d5TAp54DGNbOvKlGK9cH_hKLuPcIkG3iT8Mld447W6vdtZ6lXgBZWFwV-vf4c4TmomEfXBMEGrt30DVL-CDanQZoqM4D24j2BpNGBbUvGhbGNPXypMpYzvKVPVYCvP9yluouNDnMA90b57F-jMco2ioSegrYMqXg2yI3vRje0_oXAEyrulLr1BKLBTrOAThTjboH8YKJHMZDxnqHRkvQ1O-kcUyxvPnVkfq988IUd4gjYT4IoGjroIK50g0H8P6pHw75hLoPITka6z2nW_qUMwA9e93IBHJFD-rmBfwGoYULjAqPMoLkgJSITHf48aaXGrzZRzkWUkVjfjhvsu2wau_olKqcB6_jWcRMGSiAgHw9mlbA')
+                        string = f'\n    "{rut}": "{datos}",'
+                        f.write(string)
 
-texto = r.html.render(timeout=30)
-print(texto.html.html)
+                    rut += 1
+            with open('edu20.py', 'a') as f:
+                f.write('\n}')
+
+rut_inicial = 21380000
+start = time.perf_counter()
+asyncio.run(main(rut_inicial, data))
+end = time.perf_counter()
+print(end - start)
