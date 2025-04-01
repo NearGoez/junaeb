@@ -1,0 +1,33 @@
+{
+    "id":6839228,
+    "personaRut":22100800,
+    "personaDv":"6",
+    "personaApellidoMaterno":"ESPINOZA",
+    "personaApellidoPaterno":"GONZÁLEZ",
+    "personaFechaNacimiento":1144641600000,
+    "personaNombres":"DENIS MATÍAS",
+    "personaEmail":"slythin07@gmail.com",
+    "personaFallecida":false,
+    "personaFechaFallecida":null,
+    "personaTelefono":null,
+    "nacionalidad"
+    :{"id":1,"nacionalidadDesc":"Chilena"},
+    "persFecNac2":"10/04/2006",
+    "becaEtnia":null,
+    "persAnios":0,
+    "persEmbarazo":null,
+    "discapacidad":null,
+    "esPadreOMadre":null,
+    "confirmaDatosTutor":null,
+    "usuarioLDAP":null,
+    "validacionLDAP":false,
+    "sexo":{"id":1,"sexoDescripcion":"Hombre",
+        "sexoDescripcion2"
+        :"Masculino"
+        ,"sexoSigla"
+        :"M"},
+    "persNombreCompleto":"DENIS MATÍAS GONZÁLEZ ESPINOZA"
+}
+
+
+

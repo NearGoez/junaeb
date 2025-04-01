@@ -1,0 +1,7 @@
+*
+
+!.gitignore
+!main.py
+!fuas.py
+!visor.py
+!data_prueba.db

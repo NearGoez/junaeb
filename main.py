@@ -1,6 +1,7 @@
 import asyncio 
 import time
 import aiohttp
+import json
 from bs4 import BeautifulSoup as bs
 
 def digito(rut):
@@ -8,44 +9,42 @@ def digito(rut):
     return {10: 'K', 11: '0'}.get(value, str(value))
 
 
-rut_inicial = 14000000
+rut_inicial = 22200000
 
-print(type(digito(rut_inicial)))
 
-async def fetch_rut(session, token, rut):
+async def fetch_rut(session,jsessionid, token, rut):
+    rut_str = f'{rut}-{digito(rut)}'
+
+    url = 'https://sinabweb.junaeb.cl/sinabweb/registro/getPersonaInfo'
     payload = {
-
+            'rut': rut_str,
     }
-    async with session.post() as response:
-
+    headers = {
+            'X-CSRF-TOKEN': token,
+            }
+    cookies = {
+            'JSESSIONID': jsessionid,
+            }
+    async with session.post(url, cookies=cookies, headers=headers, data=payload, ssl=False) as r:
+        return await r.text()
 
 async def main(rut_inicial):
     rut_actual = rut_inicial
-    while True:
-        async with aiohttp.ClientSession() as session:
-            for i in range(80000):
+    async with aiohttp.ClientSession() as session:
+        print('Buscando token...')
+        async with session.get('https://sinabweb.junaeb.cl/sinabweb/registro', ssl=False) as response:
+            html = await response.text()
+            jsessionid = response.cookies['JSESSIONID'].value
 
-                async with session.get('https://sinabweb.junaeb.cl/sinabweb/registro', ssl=False) as response:
-                    html = await response.text()
-
-                soup = bs(html, 'html.parser')
-                token = soup.find('input', {'name': '_csrf'})['value']
-
-                headers = {
-                'x-csrf-token': token,
-                }
-
-                url_personal_info = 'https://sinabweb.junaeb.cl/sinabweb/registro/getPersonaInfo' 
-                rut_str = f'{str(rut_actual)}-{digito(rut_actual)}'
-                payload = {
-                        'rut': '21885663-2',
-                        }
-                async with session.post(url_personal_info, data=payload, headers=headers, ssl=False) as response:
-                    personal_info_json = await response.text()
-
-                print(personal_info_json)
-                rut_actual +=1
+        soup = bs(html, 'html.parser')
+        token = soup.find('input', {'name': '_csrf'})['value']
+        print('Token listo:', token)
+        
+        print("Iniciando fetching de ruts")
+        tasks = [fetch_rut(session, jsessionid, token, rut_inicial + i) for i in range(1)]
+        resultados = await asyncio.gather(*tasks) 
+        for resultado in resultados:
+            print(resultado)
 
 
-#asyncio.run(main(rut_inicial))
-
+asyncio.run(main(rut_inicial))
